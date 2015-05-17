@@ -1,6 +1,6 @@
 ![](http://i.imgur.com/wL5ZTfu.png)
 
-To install: place the files in ~/.ipython/kernels/jkernel directory. Open `ipython notebook` from that directory.
+To install: place the files in ~/.ipython/kernels/jkernel directory. Make sure that the path to jconsole in the script is okay. Open `ipython notebook` from this directory.
 
 Install pexpect module for Python.
 

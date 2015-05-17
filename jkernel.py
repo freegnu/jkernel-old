@@ -17,7 +17,7 @@ class JKernel(Kernel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.j = pexpect.spawn("/home/adrian/j803/bin/jconsole")
+        self.j = pexpect.spawn("~/j803/bin/jconsole")
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
