@@ -1,6 +1,9 @@
 from IPython.kernel.zmq.kernelbase import Kernel
 import pexpect
 
+import base64
+import os
+
 class JKernel(Kernel):
     implementation = 'jkernel'
     implementation_version = '0.1'
@@ -17,13 +20,17 @@ class JKernel(Kernel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.j = pexpect.spawn("/home/adrian/j803/bin/jconsole")
+        self.j = pexpect.spawn(os.path.expanduser("~/j803/bin/jconsole"))
 
+        # ugly hardcoded thing for detecting separators
+        # will generate proper output only if the list line has output
         self.separator = "jkernel_separator=:0"
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
         lines = code.splitlines()
+
+        generates_image = True if lines[-1].startswith("viewmat") else False
 
         for line in lines:
             self.j.sendline(line)
@@ -32,10 +39,22 @@ class JKernel(Kernel):
         self.j.expect("\r\n   " + self.separator + "\r\n   ")
 
         if not silent:
-            output = self.j.before.decode().strip("\n").splitlines()[len(lines):]
-            output = "\n".join(output)
-            stream_content = {'name': 'stdout', 'text': output}
-            self.send_response(self.iopub_socket, 'stream', stream_content)
+            if not generates_image:
+                output = self.j.before.decode().strip("\n").splitlines()[len(lines):]
+                output = "\n".join(output)
+                stream_content = {'name': 'stdout', 'text': output}
+                self.send_response(self.iopub_socket, 'stream', stream_content)
+
+            else:
+                with open(os.path.expanduser("~/j64-803-user/temp/viewmat.png"), "rb") as file:
+                    file = base64.b64encode(file.read()).decode()
+
+                stream_content = {
+                    'source': 'meh',
+                    'data': {'image/png': file},
+                    'metadata': {'image/png': {'width': 200, 'height': 200}}
+                }
+                self.send_response(self.iopub_socket, 'display_data', stream_content)
 
         return {'status': 'ok',
                 # The base class increments the execution count
@@ -57,12 +76,12 @@ class JKernel(Kernel):
 
         if line[line_pos].isalnum():
             i, j = line_pos, line_pos
-            while i > 0 and line[i-1].isalnum():
+            while i > 0 and line[i-1].isalnum() or line[i-1] == "_":
                 i -= 1
-            while j < len(line)-1 and line[j+1].isalnum():
+            while j < len(line)-1 and line[j+1].isalnum() or line[j+1] == "_":
                 j += 1
             if line[i].isalpha():
-                if j == len(line)-1 or line[j+1] != ".":
+                if j == len(line)-1 or line[j+1] not in ".:":
                     name = line[i:j+1]
 
                     self.j.sendline(name)
