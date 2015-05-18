@@ -17,7 +17,7 @@ class JKernel(Kernel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.j = pexpect.spawn("~/j803/bin/jconsole")
+        self.j = pexpect.spawn("/home/adrian/j803/bin/jconsole")
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
@@ -25,11 +25,14 @@ class JKernel(Kernel):
 
         for line in lines:
             self.j.sendline(line)
-            self.j.expect("\r\n   ")
+
+        separator = "jkernel_separator=:0"
+        self.j.sendline(separator)
+        self.j.expect("\r\n   " + separator + "\r\n   ")
 
         if not silent:
-            output = self.j.before.decode().strip()
-            output = "\n".join(output.splitlines()[1:])
+            output = self.j.before.decode().strip("\n").splitlines()[len(lines):]
+            output = "\n".join(output)
             stream_content = {'name': 'stdout', 'text': output}
             self.send_response(self.iopub_socket, 'stream', stream_content)
 
