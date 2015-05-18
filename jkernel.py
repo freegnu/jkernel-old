@@ -19,6 +19,8 @@ class JKernel(Kernel):
         super().__init__(*args, **kwargs)
         self.j = pexpect.spawn("/home/adrian/j803/bin/jconsole")
 
+        self.separator = "jkernel_separator=:0"
+
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
         lines = code.splitlines()
@@ -26,9 +28,8 @@ class JKernel(Kernel):
         for line in lines:
             self.j.sendline(line)
 
-        separator = "jkernel_separator=:0"
-        self.j.sendline(separator)
-        self.j.expect("\r\n   " + separator + "\r\n   ")
+        self.j.sendline(self.separator)
+        self.j.expect("\r\n   " + self.separator + "\r\n   ")
 
         if not silent:
             output = self.j.before.decode().strip("\n").splitlines()[len(lines):]
@@ -45,13 +46,40 @@ class JKernel(Kernel):
 
     def do_inspect(self, code, cursor_pos, detail_level=0):
 
-        inspection = "u@v  mv lv rv \nAtop \n\nx u@v y ↔ u x v y\n4523545"
+        inspection = ""
+
+        code += "\n"
+        line = code[code.rfind("\n", 0, cursor_pos)+1 : code.find("\n", cursor_pos)]
+
+        line_pos = cursor_pos - code.rfind("\n", 0, cursor_pos) - 2
+
+        found = False
+
+        if line[line_pos].isalnum():
+            i, j = line_pos, line_pos
+            while i > 0 and line[i-1].isalnum():
+                i -= 1
+            while j < len(line)-1 and line[j+1].isalnum():
+                j += 1
+            if line[i].isalpha():
+                if j == len(line)-1 or line[j+1] != ".":
+                    name = line[i:j+1]
+
+                    self.j.sendline(name)
+
+                    self.j.sendline(self.separator)
+                    self.j.expect("\r\n   " + self.separator + "\r\n   ")
+
+                    output = self.j.before.decode().strip("\n").splitlines()[1:]
+                    inspection = "\n".join(output)
+
+                    found = True
 
         return {
             'status': 'ok',
             'data': {'text/plain': inspection},
             'metadata': {},
-            'found': True
+            'found': found
         }
 
 
