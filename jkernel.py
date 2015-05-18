@@ -3,6 +3,7 @@ import pexpect
 
 import base64
 import os
+import time
 
 class JKernel(Kernel):
     implementation = 'jkernel'
@@ -30,10 +31,13 @@ class JKernel(Kernel):
 
         lines = code.splitlines()
 
-        generates_image = True if lines[-1].startswith("viewmat") else False
+        generates_image = True if lines[-1].startswith("viewmat ") or lines[-1].startswith("viewrgb ") else False
 
         for line in lines:
             self.j.sendline(line)
+
+        # sleeping is necessary in case some operation takes a lot of time :/
+        time.sleep(0.2)
 
         self.j.sendline(self.separator)
         self.j.expect("\r\n   " + self.separator + "\r\n   ")
@@ -46,13 +50,15 @@ class JKernel(Kernel):
                 self.send_response(self.iopub_socket, 'stream', stream_content)
 
             else:
+                # even more sleep, just in case
+                time.sleep(0.6)
                 with open(os.path.expanduser("~/j64-803-user/temp/viewmat.png"), "rb") as file:
                     file = base64.b64encode(file.read()).decode()
 
                 stream_content = {
                     'source': 'meh',
                     'data': {'image/png': file},
-                    'metadata': {'image/png': {'width': 200, 'height': 200}}
+                    'metadata': {'image/png': {'width': 300, 'height': 300}}
                 }
                 self.send_response(self.iopub_socket, 'display_data', stream_content)
 
