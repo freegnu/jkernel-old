@@ -43,17 +43,20 @@ class JKernel(Kernel):
         self.j.expect("\r\n   " + self.separator + "\r\n   ")
 
         if not silent:
-            if not generates_image:
+
+            def handle_text_response():
                 output = self.j.before.decode().strip("\n").splitlines()[len(lines):]
                 output = "\n".join(output)
                 stream_content = {'name': 'stdout', 'text': output}
                 self.send_response(self.iopub_socket, 'stream', stream_content)
 
-            else:
+            def handle_image_response():
                 # even more sleep, just in case
                 time.sleep(0.6)
-                with open(os.path.expanduser("~/j64-803-user/temp/viewmat.png"), "rb") as file:
+                image_path = os.path.expanduser("~/j64-803-user/temp/viewmat.png")
+                with open(image_path, "rb") as file:
                     file = base64.b64encode(file.read()).decode()
+                os.remove(image_path)
 
                 stream_content = {
                     'source': 'meh',
@@ -61,6 +64,14 @@ class JKernel(Kernel):
                     'metadata': {'image/png': {'width': 300, 'height': 300}}
                 }
                 self.send_response(self.iopub_socket, 'display_data', stream_content)
+
+            if not generates_image:
+                handle_text_response()
+            else:
+                try:
+                    handle_image_response()
+                except:
+                    handle_text_response()
 
         return {'status': 'ok',
                 # The base class increments the execution count
