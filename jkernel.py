@@ -1,9 +1,9 @@
-from IPython.kernel.zmq.kernelbase import Kernel
-import pexpect
+from ipykernel.kernelbase import Kernel
 
 import base64
 import os
-import time
+
+from wrapper import JWrapper
 
 class JKernel(Kernel):
     implementation = 'jkernel'
@@ -21,11 +21,7 @@ class JKernel(Kernel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.j = pexpect.spawn(os.path.expanduser("~/j803/bin/jconsole"))
-
-        # ugly hardcoded thing for detecting separators
-        # will generate proper output only if the list line has output
-        self.separator = "jkernel_separator=:0"
+        self.j = JWrapper()
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
@@ -33,27 +29,20 @@ class JKernel(Kernel):
 
         generates_image = True if lines[-1].startswith("viewmat ") or lines[-1].startswith("viewrgb ") else False
 
+        output = ""
         for line in lines:
-            self.j.sendline(line)
-
-        # sleeping is necessary in case some operation takes a lot of time :/
-        time.sleep(0.2)
-
-        self.j.sendline(self.separator)
-        self.j.expect("\r\n   " + self.separator + "\r\n   ")
+            output += self.j.sendline(line)
 
         if not silent:
 
             def handle_text_response():
-                output = self.j.before.decode().strip("\n").splitlines()[len(lines):]
-                output = "\n".join(output)
+                if not output:
+                    return
                 stream_content = {'name': 'stdout', 'text': output}
                 self.send_response(self.iopub_socket, 'stream', stream_content)
 
             def handle_image_response():
-                # even more sleep, just in case
-                time.sleep(0.6)
-                image_path = os.path.expanduser("~/j64-803-user/temp/viewmat.png")
+                image_path = os.path.expanduser("~/j64-804-user/temp/viewmat.png")
                 with open(image_path, "rb") as file:
                     file = base64.b64encode(file.read()).decode()
                 os.remove(image_path)
@@ -100,15 +89,7 @@ class JKernel(Kernel):
             if line[i].isalpha():
                 if j == len(line)-1 or line[j+1] not in ".:":
                     name = line[i:j+1]
-
-                    self.j.sendline(name)
-
-                    self.j.sendline(self.separator)
-                    self.j.expect("\r\n   " + self.separator + "\r\n   ")
-
-                    output = self.j.before.decode().strip("\n").splitlines()[1:]
-                    inspection = "\n".join(output)
-
+                    inspection = self.j.sendline(name)
                     found = True
 
         return {
@@ -120,5 +101,5 @@ class JKernel(Kernel):
 
 
 if __name__ == '__main__':
-    from IPython.kernel.zmq.kernelapp import IPKernelApp
+    from ipykernel.kernelapp import IPKernelApp
     IPKernelApp.launch_instance(kernel_class=JKernel)
