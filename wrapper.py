@@ -52,7 +52,7 @@ class JWrapper:
             0,
             cast(INPUT_CALLBACK(input_callback), c_void_p),
             0,
-            c_void_p(3) # defines "console" front-end (see jconsole.c, line 128)
+            c_void_p(3) # defines "console" frontend (for some reason, see jconsole.c, line 128)
         )
         self.libj.JSM(self.j, callbacks)
 
@@ -60,6 +60,7 @@ class JWrapper:
         self.sendline("BINPATH_z_=:'{}'".format(binpath))
         self.sendline("1!:44'{}'".format(binpath))
         self.sendline("0!:0 <'profile.ijs'")
+        self.sendline("(9!:7) 16 17 18 19 20 21 22 23 24 25 26 { a.") # pretty boxes
 
     def close(self):
         self.libj.JFree(self.j)
