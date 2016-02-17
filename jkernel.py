@@ -7,6 +7,11 @@ import os
 
 from wrapper import JWrapper
 
+# CUSTOMIZE HERE
+# Viewmat creates a temporary picture file in order to display it.
+# This is the path the kernel will use to find it.
+j_viewmat_image_location = "~/j64-804-user/temp/viewmat.png"
+
 class JKernel(Kernel):
     implementation = 'jkernel'
     implementation_version = '0.1'
@@ -44,7 +49,7 @@ class JKernel(Kernel):
                 self.send_response(self.iopub_socket, 'stream', stream_content)
 
             def handle_image_response():
-                image_path = os.path.expanduser("~/j64-804-user/temp/viewmat.png")
+                image_path = os.path.expanduser(j_viewmat_image_location)
                 with open(image_path, "rb") as file:
                     file = base64.b64encode(file.read()).decode()
                 os.remove(image_path)

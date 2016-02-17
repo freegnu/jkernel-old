@@ -3,9 +3,20 @@ from __future__ import print_function
 from ctypes import *
 
 import sys
+import os
 
-def get_libj(path):
-    libj = cdll.LoadLibrary(path)
+# CUSTOMIZE HERE
+# J binary directory (the one with all the binaries)
+j_bin_path = "/home/adrian/j64-804/bin"
+
+def get_libj(binpath):
+    if os.name == "nt":
+        lib_path = binpath + "/j.dll" # Windows
+    elif os.name == "mac":
+        lib_path = binpath + "/libj.dylib" # OSX
+    else:
+        lib_path = binpath + "/libj.so" # Linux
+    libj = cdll.LoadLibrary(lib_path)
 
     libj.JInit.restype = c_void_p
     libj.JSM.argtypes = [c_void_p, c_void_p]
@@ -19,9 +30,9 @@ def get_libj(path):
 class JWrapper:
     def __init__(self):
 
-        binpath = "/home/adrian/j64-804/bin"
+        binpath = j_bin_path
 
-        self.libj = get_libj(binpath + "/libj.so")
+        self.libj = get_libj(binpath)
         self.j = self.libj.JInit()
 
         OUTPUT_CALLBACK = CFUNCTYPE(None, c_void_p, c_int, c_char_p)
