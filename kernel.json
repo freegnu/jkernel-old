@@ -1,5 +1,5 @@
 {
-    "argv": ["python3","-m","jkernel", "-f", "{connection_file}"],
+    "argv": ["python","-m","jkernel", "-f", "{connection_file}"],
     "display_name": "j-kernel",
     "language": "j"
 }

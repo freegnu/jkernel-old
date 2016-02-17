@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from ipykernel.kernelbase import Kernel
 
 import base64
