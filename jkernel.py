@@ -27,8 +27,10 @@ class JKernel(Kernel):
     ]
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(JKernel, self).__init__(*args, **kwargs)
         self.j = JWrapper()
+
+        assert self.j.sendline("2+2") == "4\n" # make sure everything's working fine
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
@@ -75,6 +77,9 @@ class JKernel(Kernel):
                 'payload': [],
                 'user_expressions': {},
                }
+
+    def do_shutdown(self, restart):
+        self.j.close()
 
     def do_inspect(self, code, cursor_pos, detail_level=0):
 
