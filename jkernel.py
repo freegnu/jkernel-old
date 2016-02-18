@@ -38,9 +38,7 @@ class JKernel(Kernel):
 
         generates_image = True if lines[-1].startswith("viewmat ") or lines[-1].startswith("viewrgb ") else False
 
-        output = ""
-        for line in lines:
-            output += self.j.sendline(line)
+        output = self.j.sendlines(lines)
 
         if not silent:
 

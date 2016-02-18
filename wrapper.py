@@ -35,6 +35,10 @@ class JWrapper:
         self.libj = get_libj(binpath)
         self.j = self.libj.JInit()
 
+        # buffer for multiline input,
+        # for normal line input and J explicit definitions.
+        self.input_buffer = []
+
         OUTPUT_CALLBACK = CFUNCTYPE(None, c_void_p, c_int, c_char_p)
         INPUT_CALLBACK = CFUNCTYPE(c_char_p, c_void_p, c_char_p)
 
@@ -44,7 +48,10 @@ class JWrapper:
             self.output = result.decode('utf-8', 'replace')
 
         def input_callback(j, prompt):
-            return b")"
+            if not self.input_buffer:
+                return b")"
+            line = self.input_buffer.pop(0)
+            return line.encode()
 
         callbacks_t = c_void_p*5
         callbacks = callbacks_t(
@@ -71,6 +78,14 @@ class JWrapper:
         if not self.output:
             return ""
         return self.output
+
+    def sendlines(self, lines):
+        self.input_buffer = lines
+        output = ""
+        while self.input_buffer:
+            line = self.input_buffer.pop(0)
+            output += self.sendline(line)
+        return output
 
 if __name__ == "__main__":
     j = JWrapper()
