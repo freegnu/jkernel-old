@@ -1,9 +1,16 @@
+from __future__ import print_function
+
 from ipykernel.kernelbase import Kernel
 
 import base64
 import os
 
 from wrapper import JWrapper
+
+# CUSTOMIZE HERE
+# Viewmat creates a temporary picture file in order to display it.
+# This is the path the kernel will use to find it.
+j_viewmat_image_location = "~/j64-804-user/temp/viewmat.png"
 
 class JKernel(Kernel):
     implementation = 'jkernel'
@@ -20,8 +27,10 @@ class JKernel(Kernel):
     ]
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(JKernel, self).__init__(*args, **kwargs)
         self.j = JWrapper()
+
+        assert self.j.sendline("2+2") == "4\n" # make sure everything's working fine
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
@@ -29,9 +38,7 @@ class JKernel(Kernel):
 
         generates_image = True if lines[-1].startswith("viewmat ") or lines[-1].startswith("viewrgb ") else False
 
-        output = ""
-        for line in lines:
-            output += self.j.sendline(line)
+        output = self.j.sendlines(lines)
 
         if not silent:
 
@@ -42,7 +49,7 @@ class JKernel(Kernel):
                 self.send_response(self.iopub_socket, 'stream', stream_content)
 
             def handle_image_response():
-                image_path = os.path.expanduser("~/j64-804-user/temp/viewmat.png")
+                image_path = os.path.expanduser(j_viewmat_image_location)
                 with open(image_path, "rb") as file:
                     file = base64.b64encode(file.read()).decode()
                 os.remove(image_path)
@@ -68,6 +75,9 @@ class JKernel(Kernel):
                 'payload': [],
                 'user_expressions': {},
                }
+
+    def do_shutdown(self, restart):
+        self.j.close()
 
     def do_inspect(self, code, cursor_pos, detail_level=0):
 

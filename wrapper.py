@@ -1,9 +1,22 @@
+from __future__ import print_function
+
 from ctypes import *
 
 import sys
+import os
 
-def get_libj(path):
-    libj = cdll.LoadLibrary(path)
+# CUSTOMIZE HERE
+# J binary directory (the one with all the binaries)
+j_bin_path = "/home/adrian/j64-804/bin"
+
+def get_libj(binpath):
+    if os.name == "nt":
+        lib_path = binpath + "/j.dll" # Windows
+    elif os.name == "mac":
+        lib_path = binpath + "/libj.dylib" # OSX
+    else:
+        lib_path = binpath + "/libj.so" # Linux
+    libj = cdll.LoadLibrary(lib_path)
 
     libj.JInit.restype = c_void_p
     libj.JSM.argtypes = [c_void_p, c_void_p]
@@ -17,10 +30,14 @@ def get_libj(path):
 class JWrapper:
     def __init__(self):
 
-        binpath = "/home/adrian/j64-804/bin"
+        binpath = j_bin_path
 
-        self.libj = get_libj(binpath + "/libj.so")
+        self.libj = get_libj(binpath)
         self.j = self.libj.JInit()
+
+        # buffer for multiline input,
+        # for normal line input and J explicit definitions.
+        self.input_buffer = []
 
         OUTPUT_CALLBACK = CFUNCTYPE(None, c_void_p, c_int, c_char_p)
         INPUT_CALLBACK = CFUNCTYPE(c_char_p, c_void_p, c_char_p)
@@ -31,7 +48,10 @@ class JWrapper:
             self.output = result.decode('utf-8', 'replace')
 
         def input_callback(j, prompt):
-            return b")"
+            if not self.input_buffer:
+                return b")"
+            line = self.input_buffer.pop(0)
+            return line.encode()
 
         callbacks_t = c_void_p*5
         callbacks = callbacks_t(
@@ -39,7 +59,7 @@ class JWrapper:
             0,
             cast(INPUT_CALLBACK(input_callback), c_void_p),
             0,
-            c_void_p(3) # defines "console" front-end (see jconsole.c, line 128)
+            c_void_p(3) # defines "console" frontend (for some reason, see jconsole.c, line 128)
         )
         self.libj.JSM(self.j, callbacks)
 
@@ -47,6 +67,7 @@ class JWrapper:
         self.sendline("BINPATH_z_=:'{}'".format(binpath))
         self.sendline("1!:44'{}'".format(binpath))
         self.sendline("0!:0 <'profile.ijs'")
+        self.sendline("(9!:7) 16 17 18 19 20 21 22 23 24 25 26 { a.") # pretty boxes
 
     def close(self):
         self.libj.JFree(self.j)
@@ -57,6 +78,14 @@ class JWrapper:
         if not self.output:
             return ""
         return self.output
+
+    def sendlines(self, lines):
+        self.input_buffer = lines
+        output = ""
+        while self.input_buffer:
+            line = self.input_buffer.pop(0)
+            output += self.sendline(line)
+        return output
 
 if __name__ == "__main__":
     j = JWrapper()
