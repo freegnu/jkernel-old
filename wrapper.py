@@ -7,12 +7,12 @@ import os
 
 # CUSTOMIZE HERE
 # J binary directory (the one with all the binaries)
-j_bin_path = "/home/adrian/j64-804/bin"
+j_bin_path = os.path.expanduser("~/j64-804/bin")
 
 def get_libj(binpath):
     if os.name == "nt":
         lib_path = binpath + "/j.dll" # Windows
-    elif os.name == "mac":
+    elif sys.platform == "darwin":
         lib_path = binpath + "/libj.dylib" # OSX
     else:
         lib_path = binpath + "/libj.so" # Linux
