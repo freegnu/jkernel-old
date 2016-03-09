@@ -7,10 +7,22 @@ import os
 
 from wrapper import JWrapper
 
-# CUSTOMIZE HERE
-# Viewmat creates a temporary picture file in order to display it.
-# This is the path the kernel will use to find it.
-j_viewmat_image_location = "~/j64-804-user/temp/viewmat.png"
+# Py2
+# import ConfigParser
+
+# config = ConfigParser.RawConfigParser()
+# config.read('config.ini')
+# j_viewmat_image_location = config.get('jpath', 'viewmat_image_location')
+
+# Py3
+import configparser
+
+config = configparser.ConfigParser()
+if not config.read('config.ini'):
+    config['jpath'] = {'bin_path': '~/j64-804/bin', 'viewmat_image_location': '~/j64-804-user/temp/viewmat.png'}
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+j_viewmat_image_location = config['jpath']['viewmat_image_location']
 
 class JKernel(Kernel):
     implementation = 'jkernel'

@@ -5,9 +5,22 @@ from ctypes import *
 import sys
 import os
 
-# CUSTOMIZE HERE
-# J binary directory (the one with all the binaries)
-j_bin_path = os.path.expanduser("~/j64-804/bin")
+# Py2
+# import ConfigParser
+
+# config = ConfigParser.RawConfigParser()
+# config.read('config.ini')
+# j_bin_path = os.path.expanduser(config.get('jpath', 'bin_path'))
+
+# Py3
+import configparser
+
+config = configparser.ConfigParser()
+if not config.read('config.ini'):
+    config['jpath'] = {'bin_path': '~/j64-804/bin', 'viewmat_image_location': '~/j64-804-user/temp/viewmat.png'}
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+j_bin_path = os.path.expanduser(config['jpath']['bin_path'])
 
 def get_libj(binpath):
     if os.name == "nt":
